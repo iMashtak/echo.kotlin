@@ -34,4 +34,16 @@ abstract class Event {
         createdAt = Instant.now()
         flow = Flow()
     }
+
+    constructor(flow: Flow) {
+        id = UUID.randomUUID()
+        createdAt = Instant.now()
+        this.flow = flow
+    }
+
+    constructor(event: Event) {
+        id = UUID.randomUUID()
+        createdAt = Instant.now()
+        flow = event.flow
+    }
 }

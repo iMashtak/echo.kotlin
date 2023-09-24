@@ -23,22 +23,32 @@ class Bus {
         }
     }
 
-    suspend fun publish(event: Event) {
-        val type = event::class
-        registerType(type)
-        for (channel in channels[type]!!) {
-            channel.send(event)
-        }
-    }
-
     private fun acquireChannel(type: KClass<*>): Channel<Event> {
         val channel = Channel<Event>()
         channels[type]?.add(channel)
         return channel
     }
 
+    suspend inline fun <reified T : Any> publish(event: T) {
+        publish(event, T::class)
+    }
+
+    suspend fun <T : Any> publish(event: T, type: KClass<T>) {
+        if (!Event::class.isInstance(event)) {
+            throw IllegalArgumentException()
+        }
+        registerType(type)
+        for (key in channels.keys) {
+            if (key.isInstance(event)) {
+                for (channel in channels[type]!!) {
+                    channel.send(event as Event)
+                }
+            }
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
-    suspend fun <T : Event> subscribe(
+    suspend fun <T : Any> subscribe(
         type: KClass<T>,
         action: (T) -> Unit,
         onException: (T, Throwable) -> Unit
@@ -55,7 +65,7 @@ class Bus {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    suspend fun <T : Event> subscribeAsync(
+    suspend fun <T : Any> subscribeAsync(
         type: KClass<T>,
         action: (T) -> Unit,
         onException: (T, Throwable) -> Unit

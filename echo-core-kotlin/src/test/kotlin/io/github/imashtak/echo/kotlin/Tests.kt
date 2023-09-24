@@ -9,17 +9,33 @@ class UnitTests {
 
     @Test
     fun testPublishSubscribe() {
-        val bus = Bus()
-        val counter = AtomicInteger()
         runBlocking {
+            val bus = Bus()
+            val counter = AtomicInteger()
             bus.subscribeAsync(TestEvent::class, { _ -> counter.incrementAndGet() }, { _, _ -> })
             bus.publish(TestEvent())
             delay(100)
+            assertEquals(1, counter.get())
         }
-        assertEquals(1, counter.get())
+    }
+
+    @Test
+    fun testPublishEventWithInterface() {
+        runBlocking {
+            val bus = Bus()
+            val counter = AtomicInteger()
+            bus.subscribeAsync(TestInterface::class, { _ -> counter.incrementAndGet() }, { _, _ -> })
+            bus.subscribeAsync(TestEventWithInterface::class, { _ -> counter.incrementAndGet() }, { _, _ -> })
+            val event = TestEventWithInterface() as TestInterface
+            bus.publish(event)
+            delay(100)
+            assertEquals(2, counter.get())
+        }
     }
 }
 
-class TestEvent : Event() {
+class TestEvent : Event()
 
-}
+interface TestInterface
+
+class TestEventWithInterface : Event(), TestInterface
